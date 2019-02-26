@@ -32,33 +32,6 @@ function ProfileDAO(db) {
       return decipher.update(toDecrypt, "hex", "utf8") + decipher.final("utf8");
     };
 
-    /* Fix for A6 - Sensitive Data Exposure
-
-    // Use crypto module to save sensitive data such as ssn, dob in encrypted format
-    var crypto = require("crypto");
-    var config = require("../../config/config");
-
-    /// Helper method create initialization vector
-    // By default the initialization vector is not secure enough, so we create our own
-    var createIV = function() {
-        // create a random salt for the PBKDF2 function - 16 bytes is the minimum length according to NIST
-        var salt = crypto.randomBytes(16);
-        return crypto.pbkdf2Sync(config.cryptoKey, salt, 100000, 512, "sha512");
-    };
-
-    // Helper methods to encryt / decrypt
-    var encrypt = function(toEncrypt) {
-        config.iv = createIV();
-        var cipher = crypto.createCipheriv(config.cryptoAlgo, config.cryptoKey, config.iv);
-        return cipher.update(toEncrypt, "utf8", "hex") + cipher.final("hex");
-    };
-
-    var decrypt = function(toDecrypt) {
-        var decipher = crypto.createDecipheriv(config.cryptoAlgo, config.cryptoKey, config.iv);
-        return decipher.update(toDecrypt, "hex", "utf8") + decipher.final("utf8");
-    };
-    */
-
     this.updateUser = function(userId, firstName, lastName, ssn, dob, address, bankAcc, bankRouting, callback) {
 
         // Create user document
