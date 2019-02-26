@@ -11,6 +11,26 @@ function ProfileDAO(db) {
     }
 
     var users = db.collection("users");
+    var crypto = require("crypto");
+    var config = require("../../config/config");
+
+    // Use var for now
+    var createIV = function(){
+      // Let's make a 16 byte salt. 16 is the bare bones minimum.
+      var salt = crypto.randomBytes(16);
+      return crypto.pbkdf2Sync(config.cryptoKey, salt, 100000, 512, "sha512");
+    };
+
+    var encrypt= function(toEncrypt){
+      config.iv = createIV();
+      var cipher = crypto.createCipheriv(config.cryptoAlgo, config.cryptoKey, config.iv);
+      return cipher.update(toEncrypt, "utf8", "hex") + cipher.final("hex");
+    };
+
+    var decrypt = function(toDecrypt){
+      var decipher = crypto.createDecipheriv(config.cryptoAlgo, config.cryptoKey, config.iv);
+      return decipher.update(toDecrypt, "hex", "utf8") + decipher.final("utf8");
+    };
 
     /* Fix for A6 - Sensitive Data Exposure
 

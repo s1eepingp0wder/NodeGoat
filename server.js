@@ -4,15 +4,15 @@ var express = require("express");
 var favicon = require("serve-favicon");
 var bodyParser = require("body-parser");
 var session = require("express-session");
-// var csrf = require('csurf');
+ var csrf = require('csurf');
 var consolidate = require("consolidate"); // Templating library adapter for Express
 var swig = require("swig");
-// var helmet = require("helmet");
+ var helmet = require("helmet");
 var MongoClient = require("mongodb").MongoClient; // Driver for connecting to MongoDB
 var http = require("http");
 var marked = require("marked");
-//var helmet = require("helmet");
-//var nosniff = require('dont-sniff-mimetype');
+var helmet = require("helmet");
+var nosniff = require('dont-sniff-mimetype');
 var app = express(); // Web framework to handle routing requests
 var routes = require("./app/routes");
 var config = require("./config/config"); // Application config properties
@@ -26,10 +26,6 @@ var httpsOptions = {
     cert: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/server.crt"))
 };
 
-// Start an HTTPS server.
-  https;createServer(httpsOptions, app).listen(config.port, function(){
-    console.log(`Express server listening on port ${config.port}.`);
-  });
 
 MongoClient.connect(config.db, function(err, db) {
     if (err) {
@@ -51,18 +47,6 @@ MongoClient.connect(config.db, function(err, db) {
     }));
     // Prevent clickjacking
     app.disable("x-powered-by");
-    // Another clickjacking prevention measure.
-    app.use(helmet.frame());
-    // Can't cache/store this page.
-    app.use(helmet.noCache());
-
-    // Don't let outside resources load. Only stuff we're ok with. (No more script kiddies?)
-    app.use(helmet.csp());
-
-    // Everything is HTTPS.
-    app.user(helmet.hsts());
-
-    app.use(nosniff());
 
     // Enable session management using express middleware
     app.use(session({
@@ -72,7 +56,7 @@ MongoClient.connect(config.db, function(err, db) {
         secret: config.cookieSecret,
         // Both mandatory in Express v4
         saveUninitialized: true,
-        resave: true
+        resave: true,
         // Fix for A5 - Security MisConfig
         // Use generic cookie name
         key: "sessionId",
@@ -129,10 +113,10 @@ MongoClient.connect(config.db, function(err, db) {
         console.log("Express http server listening on port " + config.port);
     });
 
-    // Fix for A6-Sensitive Data Exposure
-    // Use secure HTTPS protocol
-    https.createServer(httpsOptions, app).listen(config.port,  function() {
-        console.log("Express https server listening on port " + config.port);
-    });
+    // // Fix for A6-Sensitive Data Exposure
+    // // Use secure HTTPS protocol
+    // https.createServer(httpsOptions, app).listen(config.port,  function() {
+    //     console.log("Express https server listening on port " + config.port);
+    // });
 
 });
