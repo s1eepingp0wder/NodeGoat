@@ -16,7 +16,6 @@ var marked = require("marked");
 var app = express(); // Web framework to handle routing requests
 var routes = require("./app/routes");
 var config = require("./config/config"); // Application config properties
-/*
 // Fix for A6-Sensitive Data Exposure
 // Load keys for establishing secure HTTPS connection
 var fs = require("fs");
@@ -26,7 +25,11 @@ var httpsOptions = {
     key: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/server.key")),
     cert: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/server.crt"))
 };
-*/
+
+// Start an HTTPS server.
+  https;createServer(httpsOptions, app).listen(config.port, function(){
+    console.log(`Express server listening on port ${config.port}.`);
+  });
 
 MongoClient.connect(config.db, function(err, db) {
     if (err) {
@@ -37,35 +40,6 @@ MongoClient.connect(config.db, function(err, db) {
     }
     console.log("Connected to the database: " + config.db);
 
-    /*
-    // Fix for A5 - Security MisConfig
-    // TODO: Review the rest of helmet options, like "xssFilter"
-    // Remove default x-powered-by response header
-    app.disable("x-powered-by");
-
-    // Prevent opening page in frame or iframe to protect from clickjacking
-    app.use(helmet.xframe());
-
-    // Prevents browser from caching and storing page
-    app.use(helmet.noCache());
-
-    // Allow loading resources only from white-listed domains
-    app.use(helmet.csp());
-
-    // Allow communication only on HTTPS
-    app.use(helmet.hsts());
-
-    // TODO: Add another vuln: https://github.com/helmetjs/helmet/issues/26
-    // Enable XSS filter in IE (On by default)
-    // app.use(helmet.iexss());
-    // Now it should be used in hit way, but the README alerts that could be
-    // dangerous, like specified in the issue.
-    // app.use(helmet.xssFilter({ setOnOldIE: true }));
-
-    // Forces browser to only use the Content-Type set in the response header instead of sniffing or guessing it
-    app.use(nosniff());
-    */
-
     // Adding/ remove HTTP Headers for security
     app.use(favicon(__dirname + "/app/assets/favicon.ico"));
 
@@ -75,6 +49,20 @@ MongoClient.connect(config.db, function(err, db) {
         // Mandatory in Express v4
         extended: false
     }));
+    // Prevent clickjacking
+    app.disable("x-powered-by");
+    // Another clickjacking prevention measure.
+    app.use(helmet.frame());
+    // Can't cache/store this page.
+    app.use(helmet.noCache());
+
+    // Don't let outside resources load. Only stuff we're ok with. (No more script kiddies?)
+    app.use(helmet.csp());
+
+    // Everything is HTTPS.
+    app.user(helmet.hsts());
+
+    app.use(nosniff());
 
     // Enable session management using express middleware
     app.use(session({
@@ -85,13 +73,9 @@ MongoClient.connect(config.db, function(err, db) {
         // Both mandatory in Express v4
         saveUninitialized: true,
         resave: true
-        /*
         // Fix for A5 - Security MisConfig
         // Use generic cookie name
         key: "sessionId",
-        */
-
-        /*
         // Fix for A3 - XSS
         // TODO: Add "maxAge"
         cookie: {
@@ -99,7 +83,6 @@ MongoClient.connect(config.db, function(err, db) {
             // Remember to start an HTTPS server to get this working
             // secure: true
         }
-        */
 
     }));
 
@@ -146,12 +129,10 @@ MongoClient.connect(config.db, function(err, db) {
         console.log("Express http server listening on port " + config.port);
     });
 
-    /*
     // Fix for A6-Sensitive Data Exposure
     // Use secure HTTPS protocol
     https.createServer(httpsOptions, app).listen(config.port,  function() {
         console.log("Express https server listening on port " + config.port);
     });
-    */
 
 });
