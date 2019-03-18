@@ -21,11 +21,16 @@ var config = require("./config/config"); // Application config properties
 var fs = require("fs");
 var https = require("https");
 var path = require("path");
+// Made the PEM keys.
+// var httpsOptions = {
+//     key: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/key.pem")),
+//     cert: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/cert.pem"))
+// };
+//No damn clue why this is giving me a hard time.
 var httpsOptions = {
     key: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/server.key")),
     cert: fs.readFileSync(path.resolve(__dirname, "./artifacts/cert/server.crt"))
 };
-
 
 MongoClient.connect(config.db, function(err, db) {
     if (err) {
@@ -47,12 +52,18 @@ MongoClient.connect(config.db, function(err, db) {
     }));
     // Prevent clickjacking
     app.disable("x-powered-by");
+    app.use(helmet.frameguard());
+    app.use(helmet.contentSecurityPolicy());
+    app.use(helmet.noCache());
+    app.use(helmet.hsts());
+    app.use(nosniff());
+    //app.use(helmet.csp());
 
     // Enable session management using express middleware
     app.use(session({
         // genid: function(req) {
         //    return genuuid() // use UUIDs for session IDs
-        //},
+        // },
         secret: config.cookieSecret,
         // Both mandatory in Express v4
         saveUninitialized: true,
@@ -63,14 +74,15 @@ MongoClient.connect(config.db, function(err, db) {
         // Fix for A3 - XSS
         // TODO: Add "maxAge"
         cookie: {
-            httpOnly: true
+            httpOnly: true,
             // Remember to start an HTTPS server to get this working
             // secure: true
+            maxAge: 30 * 1000
         }
 
     }));
 
-    /*
+
     // Fix for A8 - CSRF
     // Enable Express csrf protection
     app.use(csrf());
@@ -79,7 +91,7 @@ MongoClient.connect(config.db, function(err, db) {
         res.locals.csrftoken = req.csrfToken();
         next();
     });
-    */
+
 
     // Register templating engine
     app.engine(".html", consolidate.swig);
@@ -100,23 +112,18 @@ MongoClient.connect(config.db, function(err, db) {
 
     // Template system setup
     swig.setDefaults({
-        // Autoescape disabled
-        autoescape: false
-        /*
-        // Fix for A3 - XSS, enable auto escaping
-        autoescape: true // default value
-        */
+        autoescape: true
     });
 
-    // Insecure HTTP connection
-    http.createServer(app).listen(config.port, function() {
-        console.log("Express http server listening on port " + config.port);
-    });
-
-    // // Fix for A6-Sensitive Data Exposure
-    // // Use secure HTTPS protocol
-    // https.createServer(httpsOptions, app).listen(config.port,  function() {
-    //     console.log("Express https server listening on port " + config.port);
+    // // Insecure HTTP connection
+    // http.createServer(app).listen(config.port, function() {
+    //     console.log("Express http server listening on port " + config.port);
     // });
+
+    // Fix for A6-Sensitive Data Exposure
+    // Use secure HTTPS protocol
+    https.createServer(httpsOptions, app).listen(config.port,  function() {
+        console.log("Express https server listening on port " + config.port);
+    });
 
 });

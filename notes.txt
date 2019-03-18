@@ -1,0 +1,5 @@
+.git,.gitignore,.jshintrc,.nodemonignore,Dockerfile,Gruntfile.js,LICENSE,Procfile,README.md,app,app.json,artifacts,config,docker-compose.yml,node_modules,package-lock.json,package.json,server.js,test
+
+res.end(require('fs').readFileSync("./config"))
+
+var PASS_RE =/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
